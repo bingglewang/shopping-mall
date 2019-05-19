@@ -15,10 +15,10 @@ jwt:
 
 aliyun:
   oss:
-    endpoint: oss-cn-shenzhen.aliyuncs.com
-    accessKeyId: test
-    accessKeySecret: test
-    bucketName: macro-oss
+    endpoint: oss-cn-beijing.aliyuncs.com
+    accessKeyId: LTAIdOmmjGbgGyZL
+    accessKeySecret: 9TIxKNHKUKgnnSDNQWNDykCiqeNltf
+    bucketName: binggle
     policy:
       expire: 300
     maxSize: 10
