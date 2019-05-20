@@ -15,3 +15,15 @@ spring:
       stat-view-servlet: #访问监控网页的登录用户名和密码
         login-username: druid
         login-password: druid
+
+
+#腾讯云短息服务
+tengxunSms:
+  #短信应用SDk
+  appId:
+  #短信应用SDk appkey
+  appKey:
+  #短信签名
+  signName:
+   #短信模版ID
+  templateId:
