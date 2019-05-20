@@ -1,5 +1,5 @@
 server:
-  port: 8888
+  port: 9999
 
 spring:
   datasource:
@@ -7,23 +7,30 @@ spring:
     username: root
     password: 12345a
     druid:
-      initial-size: 5 #Á¬½Ó³Ø³õÊ¼»¯´óĞ¡
-      min-idle: 10 #×îĞ¡¿ÕÏĞÁ¬½ÓÊı
-      max-active: 20 #×î´óÁ¬½ÓÊı
+      initial-size: 5 #ï¿½ï¿½ï¿½Ó³Ø³ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ğ¡
+      min-idle: 10 #ï¿½ï¿½Ğ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+      max-active: 20 #ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
       web-stat-filter:
-        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*" #²»Í³¼ÆÕâĞ©ÇëÇóÊı¾İ
-      stat-view-servlet: #·ÃÎÊ¼à¿ØÍøÒ³µÄµÇÂ¼ÓÃ»§ÃûºÍÃÜÂë
+        exclusions: "*.js,*.gif,*.jpg,*.png,*.css,*.ico,/druid/*" #ï¿½ï¿½Í³ï¿½ï¿½ï¿½ï¿½Ğ©ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+      stat-view-servlet: #ï¿½ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½Ò³ï¿½Äµï¿½Â¼ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         login-username: druid
         login-password: druid
 
 
-#ÌÚÑ¶ÔÆ¶ÌÏ¢·şÎñ
-tengxunSms:
-  #¶ÌĞÅÓ¦ÓÃSDk
-  appId:
-  #¶ÌĞÅÓ¦ÓÃSDk appkey
-  appKey:
-  #¶ÌĞÅÇ©Ãû
-  signName:
-   #¶ÌĞÅÄ£°æID
-  templateId:
+logging:
+  level:
+    root: info #æ—¥å¿—é…ç½®DEBUG,INFO,WARN,ERROR
+    com.macro.mall: debug
+#  file: demo_log.log #é…ç½®æ—¥å¿—ç”Ÿæˆè·¯å¾„
+#  path: /var/logs #é…ç½®æ—¥å¿—æ–‡ä»¶åç§°
+
+#ï¿½ï¿½Ñ¶ï¿½Æ¶ï¿½Ï¢ï¿½ï¿½ï¿½ï¿½
+tengxunsms:
+  #ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½SDk
+  appId: 1400212861
+  #ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½SDk appkey
+  appKey: b1748da079bdb339826c2032b2808903
+  #ï¿½ï¿½ï¿½ï¿½Ç©ï¿½ï¿½
+  signName: yojoç½‘
+   #ï¿½ï¿½ï¿½ï¿½Ä£ï¿½ï¿½ID
+  templateId: 335222

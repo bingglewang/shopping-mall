@@ -1,10 +1,10 @@
-package com.bing.mallsms.config;
+package com.macro.mall.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@ConfigurationProperties(prefix = "tengxunSms")
+@ConfigurationProperties(prefix = "tengxunsms")
 public class SMSConfig {
     private String appId;
     private String appKey;
