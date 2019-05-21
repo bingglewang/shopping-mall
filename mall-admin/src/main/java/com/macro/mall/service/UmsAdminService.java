@@ -24,6 +24,13 @@ public interface UmsAdminService {
     UmsAdmin register(UmsAdminParam umsAdminParam);
 
     /**
+     * 重置密码
+     * @param umsAdminParam
+     * @return
+     */
+    int reset(UmsAdminParam umsAdminParam);
+
+    /**
      * 登录功能
      * @param username 用户名
      * @param password 密码

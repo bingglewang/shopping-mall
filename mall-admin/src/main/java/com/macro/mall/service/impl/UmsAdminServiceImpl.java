@@ -98,6 +98,28 @@ public class UmsAdminServiceImpl implements UmsAdminService {
     }
 
     @Override
+    public int reset(UmsAdminParam umsAdminParam) {
+        UmsAdmin umsAdmin = new UmsAdmin();
+        BeanUtils.copyProperties(umsAdminParam, umsAdmin);
+        //查询是否有相同用户名的用户
+        UmsAdminExample example = new UmsAdminExample();
+        example.createCriteria().andUsernameEqualTo(umsAdmin.getUsername());
+
+        List<UmsAdmin> umsAdminList = adminMapper.selectByExample(example);
+        if (CollectionUtils.isEmpty(umsAdminList)) {
+            return -1;
+        }
+        umsAdmin.setId(umsAdminList.get(0).getId());
+        int i = adminMapper.updateByPrimaryKeySelective(umsAdmin);
+        if(i > 0){
+            return 0;
+        }else{
+            return -2;
+        }
+    }
+
+
+    @Override
     public String login(String username, String password) {
         String token = null;
         //密码需要客户端加密后传递

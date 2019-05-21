@@ -2,14 +2,17 @@ package com.macro.mall.controller;
 
 import com.macro.mall.common.api.CommonPage;
 import com.macro.mall.common.api.CommonResult;
+import com.macro.mall.component.SmsCodeSender;
 import com.macro.mall.dto.UmsAdminLoginParam;
 import com.macro.mall.dto.UmsAdminParam;
 import com.macro.mall.model.UmsAdmin;
 import com.macro.mall.model.UmsPermission;
 import com.macro.mall.model.UmsRole;
+import com.macro.mall.service.RedisService;
 import com.macro.mall.service.UmsAdminService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
@@ -32,6 +35,10 @@ import java.util.Map;
 public class UmsAdminController {
     @Autowired
     private UmsAdminService adminService;
+    @Autowired
+    private SmsCodeSender smsCodeSender;
+    @Autowired
+    private RedisService redisService;
     @Value("${jwt.tokenHeader}")
     private String tokenHeader;
     @Value("${jwt.tokenHead}")
@@ -40,13 +47,55 @@ public class UmsAdminController {
     @ApiOperation(value = "用户注册")
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     @ResponseBody
-    public CommonResult<UmsAdmin> register(@RequestBody UmsAdminParam umsAdminParam, BindingResult result) {
+    public CommonResult<UmsAdmin> register(@RequestBody UmsAdminParam umsAdminParam, @RequestParam(value = "code") String code,  BindingResult result) {
+        String redisCode = redisService.get(umsAdminParam.getUsername());
+        if(StringUtils.isBlank(code) || !code.equals(redisCode)){
+            return  CommonResult.failed("验证码错误");
+        }
         UmsAdmin umsAdmin = adminService.register(umsAdminParam);
         if (umsAdmin == null) {
-            CommonResult.failed();
+            return  CommonResult.failed("手机号已经被注册");
         }
         return CommonResult.success(umsAdmin);
     }
+
+
+    @ApiOperation(value = "密码重置")
+    @RequestMapping(value = "/resetPwd", method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult resetPwd(@RequestBody UmsAdminParam umsAdminParam, @RequestParam(value = "code") String code,  BindingResult result) {
+        String redisCode = redisService.get(umsAdminParam.getUsername());
+        if(StringUtils.isBlank(code) || !code.equals(redisCode)){
+            return  CommonResult.failed("验证码错误");
+        }
+        int resetResult = adminService.reset(umsAdminParam);
+        if (resetResult == -1) {
+            return  CommonResult.failed("手机号不存在");
+        }else if(resetResult == -2){
+            return  CommonResult.failed("密码重置失败");
+        }
+        return CommonResult.success("密码重置成功");
+    }
+
+
+
+    @ApiOperation(value = "发送验证码")
+    @RequestMapping(value = "/sendCode",method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult sendCode(@RequestParam(value = "phone") String phone){
+        String msg = "短信发送成功";
+        if (!phone.matches("^1[3|4|5|7|8][0-9]{9}$")) {
+            msg = "非法手机号";
+            return CommonResult.failed(msg);
+        }
+        try {
+            smsCodeSender.sendMessage(phone,100);
+        }catch (Exception e){
+            return CommonResult.failed(e.getMessage());
+        }
+        return CommonResult.success(null,msg);
+    }
+
 
     @ApiOperation(value = "登录以后返回token")
     @RequestMapping(value = "/login", method = RequestMethod.POST)
