@@ -110,6 +110,9 @@ public class UmsAdminServiceImpl implements UmsAdminService {
             return -1;
         }
         umsAdmin.setId(umsAdminList.get(0).getId());
+        //将密码进行加密操作
+        String encodePassword = passwordEncoder.encode(umsAdmin.getPassword());
+        umsAdmin.setPassword(encodePassword);
         int i = adminMapper.updateByPrimaryKeySelective(umsAdmin);
         if(i > 0){
             return 0;
