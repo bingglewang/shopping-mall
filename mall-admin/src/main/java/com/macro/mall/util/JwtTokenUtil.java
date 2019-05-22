@@ -1,5 +1,6 @@
 package com.macro.mall.util;
 
+import com.macro.mall.model.UmsMember;
 import io.jsonwebtoken.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,6 +114,16 @@ public class JwtTokenUtil {
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         claims.put(CLAIM_KEY_USERNAME, userDetails.getUsername());
+        claims.put(CLAIM_KEY_CREATED, new Date());
+        return generateToken(claims);
+    }
+
+    /**
+     * 根据用户信息生成token1
+     */
+    public String generateToken1(UmsMember umsMember) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put(CLAIM_KEY_USERNAME, umsMember.getUsername());
         claims.put(CLAIM_KEY_CREATED, new Date());
         return generateToken(claims);
     }

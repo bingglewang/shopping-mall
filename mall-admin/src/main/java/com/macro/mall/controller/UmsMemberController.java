@@ -3,13 +3,11 @@ package com.macro.mall.controller;
 import com.macro.mall.common.api.CommonPage;
 import com.macro.mall.common.api.CommonResult;
 import com.macro.mall.component.SmsCodeSender;
-import com.macro.mall.dto.UmsAdminLoginParam;
-import com.macro.mall.dto.UmsAdminParam;
-import com.macro.mall.model.UmsAdmin;
-import com.macro.mall.model.UmsPermission;
-import com.macro.mall.model.UmsRole;
+import com.macro.mall.dto.UmsMemberLoginParam;
+import com.macro.mall.dto.UmsMemberParam;
+import com.macro.mall.model.UmsMember;
 import com.macro.mall.service.RedisService;
-import com.macro.mall.service.UmsAdminService;
+import com.macro.mall.service.UmsMemberService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.lang.StringUtils;
@@ -26,56 +24,96 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 后台用户管理
- * Created by macro on 2018/4/26.
+ * 商城用户管理
+ * Created by bingglewang on 2019/5/22.
  */
 @Controller
-@Api(tags = "UmsAdminController", description = "后台用户管理")
-@RequestMapping("/admin")
-public class UmsAdminController {
+@Api(tags = "UmsMemberController", description = "商城用户管理")
+@RequestMapping("/member")
+public class UmsMemberController{
     @Autowired
-    private UmsAdminService adminService;
+    private UmsMemberService memberService;
+    @Autowired
+    private SmsCodeSender smsCodeSender;
+    @Autowired
+    private RedisService redisService;
     @Value("${jwt.tokenHeader}")
     private String tokenHeader;
     @Value("${jwt.tokenHead}")
     private String tokenHead;
 
-    @ApiOperation(value = "用户注册")
+    @ApiOperation(value = "商城用户注册")
     @RequestMapping(value = "/register", method = RequestMethod.POST)
     @ResponseBody
-    public CommonResult<UmsAdmin> register(@RequestBody UmsAdminParam umsAdminParam, BindingResult result) {
-        UmsAdmin umsAdmin = adminService.register(umsAdminParam);
-        if (umsAdmin == null) {
-            return  CommonResult.failed("用户已经被注册");
+    public CommonResult<UmsMember> register(@RequestBody UmsMemberParam umsMemberParam, @RequestParam(value = "code") String code,  BindingResult result) {
+        String redisCode = redisService.get(umsMemberParam.getUsername());
+        if(StringUtils.isBlank(code) || !code.equals(redisCode)){
+            return  CommonResult.failed("验证码错误");
         }
-        return CommonResult.success(umsAdmin);
+        UmsMember umsMember = memberService.register(umsMemberParam);
+        if (umsMember == null) {
+            return  CommonResult.failed("手机号已经被注册");
+        }
+        return CommonResult.success(umsMember);
     }
 
 
     @ApiOperation(value = "密码重置")
     @RequestMapping(value = "/resetPwd", method = RequestMethod.POST)
     @ResponseBody
-    public CommonResult resetPwd(@RequestBody UmsAdminParam umsAdminParam, BindingResult result) {
-        int resetResult = adminService.reset(umsAdminParam);
+    public CommonResult resetPwd(@RequestBody UmsMemberParam umsMemberParam, @RequestParam(value = "code") String code,  BindingResult result) {
+        String redisCode = redisService.get(umsMemberParam.getUsername());
+        if(StringUtils.isBlank(code) || !code.equals(redisCode)){
+            return  CommonResult.failed("验证码错误");
+        }
+        int resetResult = memberService.reset(umsMemberParam);
         if (resetResult == -1) {
-            return  CommonResult.failed("用户不存在");
+            return  CommonResult.failed("手机号不存在");
         }else if(resetResult == -2){
             return  CommonResult.failed("密码重置失败");
         }
         return CommonResult.success("密码重置成功");
     }
 
+
+
+    @ApiOperation(value = "发送验证码")
+    @RequestMapping(value = "/sendCode",method = RequestMethod.POST)
+    @ResponseBody
+    public CommonResult sendCode(@RequestParam(value = "phone") String phone){
+        String msg = "短信发送成功";
+        if (!phone.matches("^1[3|4|5|7|8][0-9]{9}$")) {
+            msg = "非法手机号";
+            return CommonResult.failed(msg);
+        }
+        try {
+            smsCodeSender.sendMessage(phone,100);
+        }catch (Exception e){
+            return CommonResult.failed(e.getMessage());
+        }
+        return CommonResult.success(null,msg);
+    }
+
+
     @ApiOperation(value = "登录以后返回token")
     @RequestMapping(value = "/login", method = RequestMethod.POST)
     @ResponseBody
-    public CommonResult login(@RequestBody UmsAdminLoginParam umsAdminLoginParam, BindingResult result) {
-        String token = adminService.login(umsAdminLoginParam.getUsername(), umsAdminLoginParam.getPassword());
+    public CommonResult login(@RequestBody UmsMemberLoginParam umsMemberLoginParam, BindingResult result) {
+        UmsMember umsMember = memberService.getMemberByUsername(umsMemberLoginParam.getUsername());
+        if(umsMember == null){
+            return CommonResult.validateFailed("该手机号还未注册");
+        }
+        String token = memberService.login(umsMemberLoginParam.getUsername(), umsMemberLoginParam.getPassword());
         if (token == null) {
             return CommonResult.validateFailed("用户名或密码错误");
         }
         Map<String, String> tokenMap = new HashMap<>();
         tokenMap.put("token", token);
         tokenMap.put("tokenHead", tokenHead);
+        tokenMap.put("id",umsMember.getId().toString());
+        tokenMap.put("mobile",umsMember.getPhone());
+        tokenMap.put("nickname",umsMember.getNickname());//昵称
+        tokenMap.put("portrait",umsMember.getIcon());//头像
         return CommonResult.success(tokenMap);
     }
 
@@ -84,7 +122,7 @@ public class UmsAdminController {
     @ResponseBody
     public CommonResult refreshToken(HttpServletRequest request) {
         String token = request.getHeader(tokenHeader);
-        String refreshToken = adminService.refreshToken(token);
+        String refreshToken = memberService.refreshToken(token);
         if (refreshToken == null) {
             return CommonResult.failed();
         }
@@ -97,13 +135,13 @@ public class UmsAdminController {
     @ApiOperation(value = "获取当前登录用户信息")
     @RequestMapping(value = "/info", method = RequestMethod.GET)
     @ResponseBody
-    public CommonResult getAdminInfo(Principal principal) {
+    public CommonResult getMemberInfo(Principal principal) {
         String username = principal.getName();
-        UmsAdmin umsAdmin = adminService.getAdminByUsername(username);
+        UmsMember umsMember = memberService.getMemberByUsername(username);
         Map<String, Object> data = new HashMap<>();
-        data.put("username", umsAdmin.getUsername());
+        data.put("username", umsMember.getUsername());
         data.put("roles", new String[]{"TEST"});
-        data.put("icon", umsAdmin.getIcon());
+        data.put("icon", umsMember.getIcon());
         return CommonResult.success(data);
     }
 
@@ -117,26 +155,26 @@ public class UmsAdminController {
     @ApiOperation("根据用户名或姓名分页获取用户列表")
     @RequestMapping(value = "/list", method = RequestMethod.GET)
     @ResponseBody
-    public CommonResult<CommonPage<UmsAdmin>> list(@RequestParam(value = "name", required = false) String name,
+    public CommonResult<CommonPage<UmsMember>> list(@RequestParam(value = "name", required = false) String name,
                                                    @RequestParam(value = "pageSize", defaultValue = "5") Integer pageSize,
                                                    @RequestParam(value = "pageNum", defaultValue = "1") Integer pageNum) {
-        List<UmsAdmin> adminList = adminService.list(name, pageSize, pageNum);
-        return CommonResult.success(CommonPage.restPage(adminList));
+        List<UmsMember> MemberList = memberService.list(name, pageSize, pageNum);
+        return CommonResult.success(CommonPage.restPage(MemberList));
     }
 
     @ApiOperation("获取指定用户信息")
     @RequestMapping(value = "/{id}", method = RequestMethod.GET)
     @ResponseBody
-    public CommonResult<UmsAdmin> getItem(@PathVariable Long id) {
-        UmsAdmin admin = adminService.getItem(id);
-        return CommonResult.success(admin);
+    public CommonResult<UmsMember> getItem(@PathVariable Long id) {
+        UmsMember Member = memberService.getItem(id);
+        return CommonResult.success(Member);
     }
 
     @ApiOperation("修改指定用户信息")
     @RequestMapping(value = "/update/{id}", method = RequestMethod.POST)
     @ResponseBody
-    public CommonResult update(@PathVariable Long id, @RequestBody UmsAdmin admin) {
-        int count = adminService.update(id, admin);
+    public CommonResult update(@PathVariable Long id, @RequestBody UmsMember Member) {
+        int count = memberService.update(id, Member);
         if (count > 0) {
             return CommonResult.success(count);
         }
@@ -147,50 +185,10 @@ public class UmsAdminController {
     @RequestMapping(value = "/delete/{id}", method = RequestMethod.POST)
     @ResponseBody
     public CommonResult delete(@PathVariable Long id) {
-        int count = adminService.delete(id);
+        int count = memberService.delete(id);
         if (count > 0) {
             return CommonResult.success(count);
         }
         return CommonResult.failed();
-    }
-
-    @ApiOperation("给用户分配角色")
-    @RequestMapping(value = "/role/update", method = RequestMethod.POST)
-    @ResponseBody
-    public CommonResult updateRole(@RequestParam("adminId") Long adminId,
-                                   @RequestParam("roleIds") List<Long> roleIds) {
-        int count = adminService.updateRole(adminId, roleIds);
-        if (count >= 0) {
-            return CommonResult.success(count);
-        }
-        return CommonResult.failed();
-    }
-
-    @ApiOperation("获取指定用户的角色")
-    @RequestMapping(value = "/role/{adminId}", method = RequestMethod.GET)
-    @ResponseBody
-    public CommonResult<List<UmsRole>> getRoleList(@PathVariable Long adminId) {
-        List<UmsRole> roleList = adminService.getRoleList(adminId);
-        return CommonResult.success(roleList);
-    }
-
-    @ApiOperation("给用户分配+-权限")
-    @RequestMapping(value = "/permission/update", method = RequestMethod.POST)
-    @ResponseBody
-    public CommonResult updatePermission(@RequestParam Long adminId,
-                                         @RequestParam("permissionIds") List<Long> permissionIds) {
-        int count = adminService.updatePermission(adminId, permissionIds);
-        if (count > 0) {
-            return CommonResult.success(count);
-        }
-        return CommonResult.failed();
-    }
-
-    @ApiOperation("获取用户所有权限（包括+-权限）")
-    @RequestMapping(value = "/permission/{adminId}", method = RequestMethod.GET)
-    @ResponseBody
-    public CommonResult<List<UmsPermission>> getPermissionList(@PathVariable Long adminId) {
-        List<UmsPermission> permissionList = adminService.getPermissionList(adminId);
-        return CommonResult.success(permissionList);
     }
 }
