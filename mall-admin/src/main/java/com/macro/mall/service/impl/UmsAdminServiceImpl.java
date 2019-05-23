@@ -98,31 +98,6 @@ public class UmsAdminServiceImpl implements UmsAdminService {
     }
 
     @Override
-    public int reset(UmsAdminParam umsAdminParam) {
-        UmsAdmin umsAdmin = new UmsAdmin();
-        BeanUtils.copyProperties(umsAdminParam, umsAdmin);
-        //查询是否有相同用户名的用户
-        UmsAdminExample example = new UmsAdminExample();
-        example.createCriteria().andUsernameEqualTo(umsAdmin.getUsername());
-
-        List<UmsAdmin> umsAdminList = adminMapper.selectByExample(example);
-        if (CollectionUtils.isEmpty(umsAdminList)) {
-            return -1;
-        }
-        umsAdmin.setId(umsAdminList.get(0).getId());
-        //将密码进行加密操作
-        String encodePassword = passwordEncoder.encode(umsAdmin.getPassword());
-        umsAdmin.setPassword(encodePassword);
-        int i = adminMapper.updateByPrimaryKeySelective(umsAdmin);
-        if(i > 0){
-            return 0;
-        }else{
-            return -2;
-        }
-    }
-
-
-    @Override
     public String login(String username, String password) {
         String token = null;
         //密码需要客户端加密后传递
@@ -134,7 +109,7 @@ public class UmsAdminServiceImpl implements UmsAdminService {
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             SecurityContextHolder.getContext().setAuthentication(authentication);
             token = jwtTokenUtil.generateToken(userDetails);
-            updateLoginTimeByUsername(username);
+//            updateLoginTimeByUsername(username);
             insertLoginLog(username);
         } catch (AuthenticationException e) {
             LOGGER.warn("登录异常:{}", e.getMessage());

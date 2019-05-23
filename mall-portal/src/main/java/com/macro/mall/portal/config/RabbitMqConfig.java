@@ -7,10 +7,40 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * 消息队列配置
- * Created by macro on 2018/9/14.
+ * Created by bingglewang on 2019/5/23.
  */
 @Configuration
 public class RabbitMqConfig {
+
+    /**
+     * 验证码消息实际消费队列所绑定的交换机
+     */
+    @Bean
+    DirectExchange codeDirect() {
+        return (DirectExchange) ExchangeBuilder
+                .directExchange(QueueEnum.QUEUE_SMS_CODE.getExchange())
+                .durable(true)
+                .build();
+    }
+
+    /**
+     * 验证码实际消费队列
+     */
+    @Bean
+    public Queue codeQueue() {
+        return new Queue(QueueEnum.QUEUE_SMS_CODE.getName());
+    }
+
+    /**
+     * 将验证码队列绑定到交换机
+     */
+    @Bean
+    Binding codeBinding(DirectExchange codeDirect, Queue codeQueue){
+        return BindingBuilder
+                .bind(codeQueue)
+                .to(codeDirect)
+                .with(QueueEnum.QUEUE_SMS_CODE.getRouteKey());
+    }
 
     /**
      * 订单消息实际消费队列所绑定的交换机

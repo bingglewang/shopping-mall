@@ -1,10 +1,10 @@
 server:
   port: 8443 #开发环境会开启https
-  ssl:
-    key-store: keystore.p12
-    key-alias: tomcat
-    key-store-password: 123456
-    key-store-type: PKCS12
+#  ssl:
+#    key-store: keystore.p12
+#    key-alias: tomcat
+#    key-store-password: 123456
+#    key-store-type: PKCS12
 
 spring:
   datasource:
@@ -31,7 +31,7 @@ spring:
     host: 39.108.139.140 # Redis服务器地址
     database: 0 # Redis数据库索引（默认为0）
     port: 6379 # Redis服务器连接端口
-    password: # Redis服务器连接密码（默认为空）
+    password: 12345a # Redis服务器连接密码（默认为空）
     jedis:
       pool:
         max-active: 8 # 连接池最大连接数（使用负值表示没有限制）

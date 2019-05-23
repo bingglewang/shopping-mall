@@ -1,20 +1,21 @@
 package com.macro.mall.controller;
 
+import com.macro.mall.bo.AdminUserDetails;
 import com.macro.mall.common.api.CommonPage;
 import com.macro.mall.common.api.CommonResult;
-import com.macro.mall.component.SmsCodeSender;
 import com.macro.mall.dto.UmsAdminLoginParam;
 import com.macro.mall.dto.UmsAdminParam;
 import com.macro.mall.model.UmsAdmin;
 import com.macro.mall.model.UmsPermission;
 import com.macro.mall.model.UmsRole;
-import com.macro.mall.service.RedisService;
 import com.macro.mall.service.UmsAdminService;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
-import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
@@ -46,23 +47,9 @@ public class UmsAdminController {
     public CommonResult<UmsAdmin> register(@RequestBody UmsAdminParam umsAdminParam, BindingResult result) {
         UmsAdmin umsAdmin = adminService.register(umsAdminParam);
         if (umsAdmin == null) {
-            return  CommonResult.failed("用户已经被注册");
+            CommonResult.failed();
         }
         return CommonResult.success(umsAdmin);
-    }
-
-
-    @ApiOperation(value = "密码重置")
-    @RequestMapping(value = "/resetPwd", method = RequestMethod.POST)
-    @ResponseBody
-    public CommonResult resetPwd(@RequestBody UmsAdminParam umsAdminParam, BindingResult result) {
-        int resetResult = adminService.reset(umsAdminParam);
-        if (resetResult == -1) {
-            return  CommonResult.failed("用户不存在");
-        }else if(resetResult == -2){
-            return  CommonResult.failed("密码重置失败");
-        }
-        return CommonResult.success("密码重置成功");
     }
 
     @ApiOperation(value = "登录以后返回token")
@@ -97,14 +84,13 @@ public class UmsAdminController {
     @ApiOperation(value = "获取当前登录用户信息")
     @RequestMapping(value = "/info", method = RequestMethod.GET)
     @ResponseBody
-    public CommonResult getAdminInfo(Principal principal) {
-        String username = principal.getName();
+    public CommonResult<UmsAdmin> getAdminInfo() {
+        UserDetails adminUserDetails = (UserDetails) SecurityContextHolder.getContext()
+                .getAuthentication()
+                .getPrincipal();
+        String username = adminUserDetails.getUsername();
         UmsAdmin umsAdmin = adminService.getAdminByUsername(username);
-        Map<String, Object> data = new HashMap<>();
-        data.put("username", umsAdmin.getUsername());
-        data.put("roles", new String[]{"TEST"});
-        data.put("icon", umsAdmin.getIcon());
-        return CommonResult.success(data);
+        return CommonResult.success(umsAdmin);
     }
 
     @ApiOperation(value = "登出功能")

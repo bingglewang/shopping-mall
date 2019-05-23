@@ -1,4 +1,4 @@
-package com.macro.mall.dto;
+package com.macro.mall.portal.dto;
 
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Getter;

@@ -8,6 +8,11 @@ import lombok.Getter;
  */
 @Getter
 public enum QueueEnum {
+
+    /**
+     * 消息通知队列
+     */
+    QUEUE_SMS_CODE("mall.code.direct", "mall.code.register", "mall.code.register"),
     /**
      * 消息通知队列
      */
